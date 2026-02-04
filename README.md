@@ -68,8 +68,6 @@ npm run dev
 ---
 
 ## **Demo Accounts**  
-
-## Demo Accounts
 1. email : `admin@mail.com`
    password : `pass123`
 
