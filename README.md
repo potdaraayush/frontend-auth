@@ -32,7 +32,7 @@ This is built as part of a frontend developer intern assignment.
 ### Clone the repo
 ```bash
 git clone https://github.com/potdaraayush/frontend-auth/
-cd <repo-folder>
+cd frontend-auth
 ```
 
 ### Backend Setup
