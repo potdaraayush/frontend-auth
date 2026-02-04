@@ -16,31 +16,39 @@ function Signup() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const validate = () => {
+    if (!name.trim() || !email.trim() || !password || !confirmPassword)
+      return "All fields are required";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Invalid email format";
+
+    if (password !== confirmPassword) return "Passwords do not match";
+
+    if (password.length < 6) return "Password must be at least 6 characters";
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
+    if (!passwordRegex.test(password))
+      return "Password must contain uppercase, lowercase, number, and special character";
+
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !password || !confirmPassword) {
-      setError("All fields are required");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     try {
       setLoading(true);
-      const result = await signup(name, email, password);
+      const result = await signup(name.trim(), email.trim(), password);
 
       if (result.success) {
-        setError("");
         navigate("/login");
       } else {
         setError(result.message || "Signup failed");
@@ -53,9 +61,9 @@ function Signup() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-lg shadow p-8">
-        <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">
+    <div className="flex items-center justify-center min-h-screen bg-zinc-50">
+      <div className="w-full max-w-md bg-zinc-100 rounded-lg shadow p-8">
+        <h2 className="text-2xl font-bold text-zinc-900 mb-6 text-center">
           Sign Up
         </h2>
         {error && <ErrorMessage message={error} />}
@@ -84,16 +92,17 @@ function Signup() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-zinc-800 hover:bg-zinc-700"
+          >
             {loading ? "Signing up..." : "Sign Up"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-zinc-600">
           Already have an account?{" "}
-          <a
-            href="/login"
-            className="text-blue-600 hover:underline"
-          >
+          <a href="/login" className="text-zinc-800 hover:underline">
             Login
           </a>
         </p>

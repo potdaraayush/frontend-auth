@@ -15,7 +15,8 @@ export const AuthProvider = ({ children }) => {
         setToken(storedToken);
         try {
           const userResult = await getUser();
-          setUser(userResult.data);
+          // FIX HERE: parse correctly
+          setUser(userResult.data); 
         } catch (err) {
           setUser(null);
           setToken(null);
@@ -39,16 +40,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
   };
 
-  const value = {
-    user,
-    setUser,
-    token,
-    setToken,
-    login,
-    logout,
-    isAuthenticated: !!token,
-    loading,
-  };
+  const value = { user, setUser, token, setToken, login, logout, isAuthenticated: !!token, loading };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

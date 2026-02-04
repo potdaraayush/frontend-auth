@@ -12,14 +12,28 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow mb-6">
-      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-blue-700">Task Manager</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-700">Hello, {user?.name}</span>
+    <nav className="sticky top-0 z-40 bg-zinc-700 border-b border-zinc-800">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <h1 className="text-lg font-semibold tracking-tight text-zinc-100">
+          Task Manager
+        </h1>
+
+        <div className="flex items-center gap-5">
+          <span className="text-sm text-zinc-400">
+            Hello,&nbsp;
+            <span className="font-medium text-zinc-200">{user?.name}</span>
+          </span>
+
+          <button
+            onClick={() => navigate("/profile")}
+            className="rounded-xl px-4 py-1.5 text-sm font-medium text-zinc-300 border border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 transition"
+          >
+            Profile
+          </button>
+
           <button
             onClick={handleLogout}
-            className="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white font-medium transition"
+            className="rounded-xl px-4 py-1.5 text-sm font-medium text-zinc-300 border border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 transition"
           >
             Logout
           </button>

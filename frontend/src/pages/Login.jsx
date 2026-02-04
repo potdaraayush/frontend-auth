@@ -45,10 +45,10 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-lg shadow p-8">
-        <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">
-          Login
+    <div className="flex items-center justify-center min-h-screen bg-zinc-50">
+      <div className="w-full max-w-md bg-zinc-100 rounded-lg shadow p-8">
+        <h2 className="text-2xl font-bold text-zinc-900 mb-6 text-center">
+          Login to see your Dashboard :)
         </h2>
         {error && <ErrorMessage message={error} />}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,16 +64,17 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-zinc-800 hover:bg-zinc-700"
+          >
             {loading ? "Logging in..." : "Login"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-zinc-600">
           Don't have an account?{" "}
-          <a
-            href="/signup"
-            className="text-blue-600 hover:underline"
-          >
+          <a href="/signup" className="text-zinc-800 hover:underline">
             Sign up
           </a>
         </p>

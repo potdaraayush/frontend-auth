@@ -1,155 +1,213 @@
-
-import { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
-import { getTasks, createTask, deleteTask as apiDeleteTask, updateTask } from "../api/tasks";
+import { useEffect, useState, useContext } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import TaskCard from "../components/TaskCard";
 import Button from "../components/Button";
-import Input from "../components/Input";
-import ErrorMessage from "../components/ErrorMessage";
-import axios from "axios";
+import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Tasks() {
+  const { user: authUser } = useContext(AuthContext);
+
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState("");
-  const [user, setUser] = useState({ email: "User" });
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  // Fetch tasks whenever the user changes (e.g., after profile update)
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (!authUser) return;
 
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const result = await getTasks();
-      if (result.success) {
-        setTasks(result.data || []);
-      }
-    } catch (err) {
-      setError("Failed to fetch tasks");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoading(true);
+    getTasks()
+      .then((res) => {
+        if (res.success && Array.isArray(res.data)) setTasks(res.data);
+        else setTasks([]);
+      })
+      .catch(() => setError("Failed to load tasks"))
+      .finally(() => setLoading(false));
+  }, [authUser]);
 
-  const addTask = async (e) => {
-    e.preventDefault();
-    const trimmedTask = newTask.trim();
-    const trimmedDesc = newDescription.trim();
-    if (!trimmedTask) return;
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const filteredTasks = safeTasks.filter((task) => {
+    const titleMatch = task.title?.toLowerCase().includes(search.toLowerCase());
+    const descMatch = task.description?.toLowerCase().includes(search.toLowerCase());
+    if (!(titleMatch || descMatch)) return false;
+    if (filter === "active") return !task.completed;
+    if (filter === "completed") return task.completed;
+    return true;
+  });
 
-    //logic to check dupes
-    const isDuplicate = tasks.some(
-      (task) => task.title.trim().toLowerCase() === trimmedTask.toLowerCase()
-    );
-    if (isDuplicate) {
-      setError("Task already exists");
+  const activeTasks = filteredTasks.filter((t) => !t.completed);
+  const completedTasks = filteredTasks.filter((t) => t.completed);
+
+  // Add new task
+  const handleAdd = async () => {
+    if (!title.trim()) {
+      setError("Task title is required");
       return;
     }
-
     try {
-      const result = await createTask(trimmedTask, trimmedDesc);
-      if (result.success) {
-        setTasks([...tasks, result.data]);
-        setNewTask("");
-        setNewDescription("");
+      const res = await createTask(title.trim(), description.trim());
+      if (res.success) {
+        setTasks((prev) => [res.data, ...prev]);
+        setTitle("");
+        setDescription("");
         setError("");
+        setSuccess("Task added successfully!");
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res.message || "Failed to create task");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to create task");
     }
   };
 
-  const handleDeleteTask = async (id) => {
+  // Toggle completed
+  const handleToggle = async (task) => {
     try {
-      const result = await apiDeleteTask(id);
-      if (result.success) {
-        setTasks(tasks.filter((task) => task._id !== id));
+      const res = await updateTask(task._id, { completed: !task.completed });
+      if (res.success) {
+        setTasks((prev) => prev.map((t) => (t._id === task._id ? res.data : t)));
       }
-    } catch (err) {
-      setError("Failed to delete task");
-    }
-  };
-
-  const handleToggleTask = async (task) => {
-    try {
-      const result = await updateTask(task._id, {
-        completed: !task.completed,
-      });
-      if (result.success) {
-        setTasks(
-          tasks.map((t) => (t._id === task._id ? result.data : t))
-        );
-      }
-    } catch (err) {
+    } catch {
       setError("Failed to update task");
     }
   };
 
-  const logout = async () => {
-    await axios.post("http://localhost:5000/api/v1/auth/logout");
-    window.location.href = "/";
+  // Update task
+  const handleUpdate = async (id, updates) => {
+    try {
+      const res = await updateTask(id, updates);
+      if (res.success) {
+        setTasks((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+        setSuccess("Task updated!");
+        setTimeout(() => setSuccess(""), 2000);
+      }
+    } catch {
+      setError("Failed to update task");
+    }
   };
 
-  return (
-    <>
-      {/* <Navbar user={user} onLogout={logout} /> */}
+  // Delete task
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteTask(id);
+      if (res.success) {
+        setTasks((prev) => prev.filter((t) => t._id !== id));
+        setSuccess("Task deleted!");
+        setTimeout(() => setSuccess(""), 2000);
+      }
+    } catch {
+      setError("Failed to delete task");
+    }
+  };
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4">My Tasks</h2>
-        {error && <ErrorMessage message={error} />}
-        <form onSubmit={addTask} className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
-          <Input
-            type="text"
-            placeholder="Task title..."
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-40">
+        <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 py-8">
+      <div className="max-w-6xl">
+        {/* header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-slate-800">Your tasks for today</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {activeTasks.length} active · {completedTasks.length} completed
+          </p>
+        </div>
+
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {success && <p className="text-sm text-green-500 mb-4">{success}</p>}
+
+        {/* search + filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks..."
+            className="flex-1 rounded-xl border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300"
           />
-          <Input
-            type="text"
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="rounded-xl border px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
+          >
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        {/* add task */}
+        <div className="mb-10 space-y-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
+            className="w-full rounded-xl border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
+            rows={3}
+            className="w-full rounded-xl border px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-slate-300"
           />
-          <Button type="submit" disabled={loading} className="w-full md:w-auto">Add</Button>
-        </form>
-        {loading ? (
-          <div className="py-8 text-center text-blue-600">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <p className="text-gray-500 text-center">No tasks yet. Create one to get started!</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {tasks.map((task) => (
-              <div
+          <Button
+            onClick={handleAdd}
+            className="rounded-xl px-5 py-2 bg-slate-800 hover:bg-slate-700"
+          >
+            Add task
+          </Button>
+        </div>
+
+        {/* ACTIVE TASKS */}
+        <motion.div
+          layout
+          transition={{ layout: { duration: 0.25, ease: "easeOut" } }}
+          className="columns-1 sm:columns-2 lg:columns-3 gap-6 [column-fill:_balance]"
+        >
+          <AnimatePresence initial={false}>
+            {activeTasks.map((task) => (
+              <TaskCard
                 key={task._id}
-                className={`bg-white rounded-lg shadow p-5 flex flex-col gap-3 border-2 transition ${task.completed ? "border-green-400" : "border-gray-200"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => handleToggleTask(task)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  <span className={`text-lg font-semibold ${task.completed ? "line-through text-gray-400" : "text-gray-800"}`}>
-                    {task.title}
-                  </span>
-                </div>
-                {task.description && (
-                  <div className="text-gray-600 text-sm flex-1">{task.description}</div>
-                )}
-                <Button
-                  onClick={() => handleDeleteTask(task._id)}
-                  className="bg-red-500 hover:bg-red-600 px-3 py-1 text-sm self-end"
-                >
-                  Delete
-                </Button>
-              </div>
+                task={task}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+              />
             ))}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* COMPLETED TASKS */}
+        {completedTasks.length > 0 && (
+          <div className="mt-14">
+            <h2 className="text-sm font-medium text-slate-500 mb-4">Completed</h2>
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 opacity-70 grayscale">
+              {completedTasks.map((task) => (
+                <TaskCard
+                  key={task._id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onUpdate={handleUpdate}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

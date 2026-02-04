@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./routes/ProtectedRoutes";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   const { isAuthenticated, loading } = useContext(AuthContext);
@@ -23,6 +24,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />
