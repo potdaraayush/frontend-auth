@@ -36,23 +36,33 @@ cd frontend-auth
 ```
 
 ### Backend Setup
+```bash
 cd backend
 npm install
+```
 
 ### create .env file in backend
+```bash
 PORT=5000
 JWT_SECRET=dev_jwt_secret_change_later_123
 MONGO_URI=mongodb://127.0.0.1:27017/frontend-auth
+```
 
 ### run backend
+```bash 
 npm run dev
+```
 
 ### Frontend Setup
+```bash
 cd frontend
 npm install
+```
 
 ### Run frontend
+```bash
 npm run dev
+```
 
 
 ---
